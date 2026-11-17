@@ -11,4 +11,9 @@ dist/
 build/
 assets/readme/*.mp4
 assets/readme/*.gif
+models/
+test_outputs/
+test_projects/
+test_orchestrator.mjs
+
 
