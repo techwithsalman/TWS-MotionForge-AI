@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TWS MotionForge AI — Powered by Tech With Salman</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Brand Header -->
+    <header class="app-header">
+      <div class="brand-group">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">TWS MotionForge AI</span>
+          <span class="brand-subtitle">Powered by Tech With Salman</span>
+        </div>
+        <span class="pill-badge free-badge">100% FREE & LOCAL</span>
+      </div>
+
+      <div class="header-actions">
+        <div class="system-health-pill" id="healthPill" title="Local System Status">
+          <span class="status-dot"></span>
+          <span id="healthText">Engines Ready</span>
+        </div>
+        <button class="btn btn-primary" id="btnQuickCreate">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          New Video Project
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <div class="workspace-body">
+      <!-- Sidebar Navigation -->
+      <nav class="sidebar">
+        <div class="nav-section-title">STUDIO</div>
+        <button class="nav-item active" data-tab="tab-dashboard">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          Dashboard
+        </button>
+        <button class="nav-item" data-tab="tab-create">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+          Create Video
+        </button>
+        <button class="nav-item" data-tab="tab-storyboard">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Storyboard Studio
+        </button>
+        <button class="nav-item" data-tab="tab-player">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+          Video Player & Review
+        </button>
+
+        <div class="nav-section-title">ASSETS & MEDIA</div>
+        <button class="nav-item" data-tab="tab-voices">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          Voice Selection Studio
+        </button>
+        <button class="nav-item" data-tab="tab-audio">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+          Music & Audio Library
+        </button>
+        <button class="nav-item" data-tab="tab-styles">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
+          Animation Styles (B1–B7)
+        </button>
+
+        <div class="nav-section-title">SYSTEM</div>
+        <button class="nav-item" data-tab="tab-projects">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          Project History
+        </button>
+        <button class="nav-item" data-tab="tab-settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Diagnostics & Specs
+        </button>
+        <button class="nav-item" data-tab="tab-about">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          About Software
+        </button>
+      </nav>
+
+      <!-- Main Content Views Container -->
+      <main class="content-area">
+
+        <!-- 1. DASHBOARD TAB -->
+        <section class="tab-pane active" id="tab-dashboard">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Studio Dashboard</h1>
+              <p class="view-desc">High-performance offline stickman video creation pipeline powered by Tech With Salman.</p>
+            </div>
+          </div>
+
+          <!-- Metric Cards -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">TOTAL PROJECTS</div>
+              <div class="stat-value" id="statTotalProjects">0</div>
+              <div class="stat-foot">Saved on local storage</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">ANIMATION ENGINES</div>
+              <div class="stat-value" id="statEngines">7 (B1–B7)</div>
+              <div class="stat-foot">100% Free & Unlocked</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">OFFLINE TTS ENGINES</div>
+              <div class="stat-value">2 (Kokoro + SAPI)</div>
+              <div class="stat-foot">8 Voices Ready</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">AI SPEECH ALIGNMENT</div>
+              <div class="stat-value">Faster-Whisper</div>
+              <div class="stat-foot">INT8 CPU Accelerated</div>
+            </div>
+          </div>
+
+          <!-- Quick Action Banner -->
+          <div class="cta-banner">
+            <div class="cta-content">
+              <h2>Generate a Viral Video in Minutes</h2>
+              <p>Type any topic or paste your script. MotionForge AI synthesizes speech, aligns captions, animates stick figures, and exports crisp H.264 MP4 videos locally.</p>
+              <div class="cta-buttons">
+                <button class="btn btn-primary btn-lg" id="btnStartCreation">Create New Video</button>
+                <button class="btn btn-secondary btn-lg" id="btnExploreStyles">Browse Styles</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Projects Section -->
+          <div class="dashboard-section">
+            <div class="section-header">
+              <h3>Recent Video Projects</h3>
+              <button class="btn btn-link" id="btnViewAllProjects">View All &rarr;</button>
+            </div>
+            <div class="projects-grid" id="dashboardRecentProjects">
+              <div class="loading-state">Loading projects...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. CREATE VIDEO TAB -->
+        <section class="tab-pane" id="tab-create">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Create Video Project</h1>
+              <p class="view-desc">Configure your story, choose animation style, select voiceover, and generate video.</p>
+            </div>
+          </div>
+
+          <div class="creation-layout">
+            <div class="creation-form">
+              <!-- Input Type Tabs: Topic vs Script -->
+              <div class="form-group">
+                <label class="form-label">Input Mode</label>
+                <div class="segmented-control">
+                  <button class="segment-btn active" id="btnModeTopic">Topic to Video</button>
+                  <button class="segment-btn" id="btnModeScript">Script to Video</button>
+                </div>
+              </div>
+
+              <!-- Topic Field -->
+              <div class="form-group" id="groupTopic">
+                <label class="form-label" for="inputTopic">Topic / Idea</label>
+                <input type="text" id="inputTopic" class="form-input" placeholder="e.g. The Power of Consistency, 3 Productivity Hacks, Why Sleep Matters...">
+                <span class="form-hint">Our offline narrative engine will deconstruct this topic into an engaging explainer script.</span>
+              </div>
+
+              <!-- Script Field -->
+              <div class="form-group hidden" id="groupScript">
+                <label class="form-label" for="inputScript">Custom Voiceover Script</label>
+                <textarea id="inputScript" class="form-textarea" rows="5" placeholder="Paste your narration script here. Sentences will be automatically synchronized with animation poses..."></textarea>
+                <span class="form-hint">Type or paste full script. Faster-Whisper will align every word with millisecond precision.</span>
+              </div>
+
+              <!-- Aspect Ratio Selection -->
+              <div class="form-group">
+                <label class="form-label">Format / Aspect Ratio</label>
+                <div class="ratio-selector">
+                  <label class="ratio-card active">
+                    <input type="radio" name="videoRatio" value="16:9" checked>
+                    <div class="ratio-box landscape-box">16:9</div>
+                    <div class="ratio-info">
+                      <span class="ratio-title">YouTube / Landscape</span>
+                      <span class="ratio-desc">1280 &times; 720 (Standard HD)</span>
+                    </div>
+                  </label>
+                  <label class="ratio-card">
+                    <input type="radio" name="videoRatio" value="9:16">
+                    <div class="ratio-box portrait-box">9:16</div>
+                    <div class="ratio-info">
+                      <span class="ratio-title">YouTube Shorts / Reels</span>
+                      <span class="ratio-desc">720 &times; 1280 (Native Mobile)</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Animation Style Selection -->
+              <div class="form-group">
+                <label class="form-label">Animation Style</label>
+                <select id="selectStyle" class="form-select">
+                  <option value="B1" selected>B1 — Clean Minimalist Stickman (Fast & Iconic)</option>
+                  <option value="B2">B2 — Bold Outlined Presenter (High Energy)</option>
+                  <option value="B3">B3 — Retro Scanline Television (CRT Aesthetic)</option>
+                  <option value="B4">B4 — Dark Cinematic Suspense (Threat Reveal)</option>
+                  <option value="B5">B5 — Technical Explainer (Precise Layouts)</option>
+                  <option value="B6">B6 — Dynamic Painted Meme & Puppets (Rich Art)</option>
+                  <option value="B7">B7 — Reflective Montage & Paths (Philosophical)</option>
+                </select>
+              </div>
+
+              <!-- Voice Engine & Voice Selection -->
+              <div class="form-row">
+                <div class="form-group col-half">
+                  <label class="form-label">Voice Engine</label>
+                  <select id="selectVoiceEngine" class="form-select">
+                    <option value="sapi" selected>Windows SAPI5 (Instant Synthesis, ~0.2s)</option>
+                    <option value="kokoro">Kokoro ONNX (Studio Neural 24kHz)</option>
+                  </select>
+                </div>
+                <div class="form-group col-half">
+                  <label class="form-label">Narrator Voice</label>
+                  <select id="selectVoiceName" class="form-select">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="form-actions">
+                <button class="btn btn-secondary" id="btnAuditionCurrentVoice">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  Audition Voice
+                </button>
+                <button class="btn btn-primary btn-lg" id="btnSubmitGenerate">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                  Generate Video Project
+                </button>
+              </div>
+            </div>
+
+            <!-- Side Helper Info -->
+            <div class="creation-guide">
+              <div class="guide-card">
+                <h4>Engine Capabilities</h4>
+                <ul class="guide-list">
+                  <li><strong>100% Free:</strong> No OpenAI, Gemini, or ElevenLabs keys required.</li>
+                  <li><strong>Local Whisper:</strong> CTranslate2 INT8 model automatically extracts speech timestamps.</li>
+                  <li><strong>Dual TTS:</strong> Windows SAPI5 runs instantly; Kokoro produces natural studio audio.</li>
+                  <li><strong>Zero Cloud Uploads:</strong> Scripts, voice files, and videos never leave this machine.</li>
+                </ul>
+              </div>
+
+              <div class="guide-card audio-preview-card" id="audioPreviewCard" style="display: none;">
+                <h4>Voice Audition Player</h4>
+                <audio id="auditionAudioPlayer" controls style="width: 100%; margin-top: 8px;"></audio>
+                <span class="audition-meta" id="auditionMeta"></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. STORYBOARD STUDIO TAB -->
+        <section class="tab-pane" id="tab-storyboard">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Storyboard Studio</h1>
+              <p class="view-desc">Inspect, review, and customize shot beats, narration lines, poses, and timing.</p>
+            </div>
+            <div class="header-tools">
+              <button class="btn btn-primary" id="btnRenderCurrentStoryboard">Render Active Project</button>
+            </div>
+          </div>
+
+          <div class="storyboard-container" id="storyboardContainer">
+            <div class="empty-state">
+              <p>No project loaded. Create a new video or select an existing project from History.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. VIDEO PLAYER TAB -->
+        <section class="tab-pane" id="tab-player">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Video Player & Review</h1>
+              <p class="view-desc">Inspect rendered MP4 video, check audio synchronization, and view aligned subtitles.</p>
+            </div>
+            <div class="header-tools">
+              <button class="btn btn-secondary" id="btnOpenVideoFolder">Open Output Folder</button>
+            </div>
+          </div>
+
+          <div class="player-layout">
+            <div class="video-container">
+              <video id="mainVideoPlayer" controls preload="auto">
+                <p>Your platform does not support video playback.</p>
+              </video>
+            </div>
+            <div class="player-sidebar">
+              <div class="card">
+                <h4>Project Information</h4>
+                <div class="info-row"><span>Project:</span> <strong id="playerProjectName">—</strong></div>
+                <div class="info-row"><span>Style:</span> <span class="badge" id="playerStyleBadge">B1</span></div>
+                <div class="info-row"><span>Aspect Ratio:</span> <span id="playerRatio">—</span></div>
+                <div class="info-row"><span>Duration:</span> <span id="playerDuration">—</span></div>
+                <div class="info-row"><span>Resolution:</span> <span id="playerResolution">—</span></div>
+              </div>
+
+              <div class="card">
+                <h4>Subtitles & Captions</h4>
+                <div class="subtitles-box" id="playerSubtitlesBox">
+                  <p class="placeholder-text">Subtitles will appear here during video playback.</p>
+                </div>
+              </div>
+
+              <div class="card" id="contactSheetCard" style="display: none;">
+                <h4>Visual Contact Sheet</h4>
+                <img id="playerContactSheetImg" src="" alt="Contact Sheet" style="width: 100%; border-radius: 6px;">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. VOICE SELECTION STUDIO TAB -->
+        <section class="tab-pane" id="tab-voices">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Voice Selection Studio</h1>
+              <p class="view-desc">Audition, compare, and select local speech synthesis voices for your projects.</p>
+            </div>
+          </div>
+
+          <div class="voices-grid" id="voicesStudioGrid">
+            <!-- Dynamically populated voice cards -->
+          </div>
+        </section>
+
+        <!-- 6. AUDIO LIBRARY TAB -->
+        <section class="tab-pane" id="tab-audio">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Music & Sound Effects Library</h1>
+              <p class="view-desc">Royalty-free background music and cartoon sound effects bundled with TWS MotionForge AI.</p>
+            </div>
+          </div>
+
+          <div class="audio-library-table-container">
+            <table class="data-table" id="audioLibraryTable">
+              <thead>
+                <tr>
+                  <th>Play</th>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>License / Attribution</th>
+                </tr>
+              </thead>
+              <tbody id="audioTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 7. ANIMATION STYLES (B1–B7) TAB -->
+        <section class="tab-pane" id="tab-styles">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Animation Styles (B1–B7)</h1>
+              <p class="view-desc">Explore the 7 specialized animation engines included in TWS MotionForge AI.</p>
+            </div>
+          </div>
+
+          <div class="styles-grid" id="stylesOverviewGrid">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+        <!-- 8. PROJECT HISTORY TAB -->
+        <section class="tab-pane" id="tab-projects">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Project History & Manager</h1>
+              <p class="view-desc">View and manage all your local video projects.</p>
+            </div>
+          </div>
+
+          <div class="projects-list-container" id="projectsHistoryList">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+        <!-- 9. DIAGNOSTICS & SPECS TAB -->
+        <section class="tab-pane" id="tab-settings">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">System Diagnostics & Specs</h1>
+              <p class="view-desc">Hardware utilization, local model validation, and dependency checks.</p>
+            </div>
+            <button class="btn btn-secondary" id="btnRunDiagnosticsCheck">Run Diagnostic Doctor</button>
+          </div>
+
+          <div class="specs-grid">
+            <div class="card">
+              <h4>Hardware Environment</h4>
+              <div class="info-row"><span>Operating System:</span> <span id="specOs">—</span></div>
+              <div class="info-row"><span>CPU Processor:</span> <span id="specCpu">—</span></div>
+              <div class="info-row"><span>CPU Cores:</span> <span id="specCores">—</span></div>
+              <div class="info-row"><span>Total RAM:</span> <span id="specRamTotal">—</span></div>
+              <div class="info-row"><span>Free RAM:</span> <span id="specRamFree">—</span></div>
+              <div class="info-row"><span>Rendering Execution:</span> <span class="badge badge-success">Local CPU-Only Capable</span></div>
+            </div>
+
+            <div class="card">
+              <h4>Local AI Models</h4>
+              <div class="info-row"><span>Kokoro ONNX Model:</span> <span id="specKokoro" class="badge">Checking...</span></div>
+              <div class="info-row"><span>Windows SAPI5 Voice:</span> <span id="specSapi" class="badge">Checking...</span></div>
+              <div class="info-row"><span>Faster-Whisper Model:</span> <span id="specWhisper" class="badge">Checking...</span></div>
+              <div class="info-row"><span>Local Ollama Server:</span> <span id="specOllama" class="badge">Checking...</span></div>
+              <div class="info-row"><span>Rule-Based Storyboarder:</span> <span class="badge badge-success">Active & Verified</span></div>
+              <div class="info-row"><span>FFmpeg Engine:</span> <span id="specFFmpeg">Verified</span></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 16px;">
+            <h4>Engine Health Report</h4>
+            <pre class="code-block" id="diagnosticsOutput">Click "Run Diagnostic Doctor" to perform live health verification across all 7 styles.</pre>
+          </div>
+        </section>
+
+        <!-- 10. ABOUT TAB -->
+        <section class="tab-pane" id="tab-about">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">About TWS MotionForge AI</h1>
+              <p class="view-desc">Official desktop software information, branding, and licensing.</p>
+            </div>
+          </div>
+
+          <div class="about-card">
+            <div class="about-header">
+              <div class="brand-logo large-logo">
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              </div>
+              <div>
+                <h2>TWS MotionForge AI</h2>
+                <p class="text-muted">Version 1.0.0 (Windows 10/11 64-bit)</p>
+                <p><strong>Brand:</strong> Tech With Salman</p>
+              </div>
+            </div>
+
+            <div class="about-body">
+              <p>TWS MotionForge AI is a professional, 100% FREE and offline-capable AI stickman video creation studio designed to democratize high-converting video production.</p>
+              
+              <h4>Key Commitments</h4>
+              <ul>
+                <li><strong>100% Free:</strong> No subscriptions, no usage billing, no paid cloud APIs.</li>
+                <li><strong>Local-First:</strong> All speech synthesis, word alignment, animation rendering, and FFmpeg composition run locally on your PC.</li>
+                <li><strong>Hardware Friendly:</strong> Runs smoothly on standard CPU hardware with zero mandatory discrete GPU requirement.</li>
+              </ul>
+
+              <h4>Open-Source Credits & Attribution</h4>
+              <p class="text-sm">Includes Kokoro ONNX (Apache 2.0), Faster-Whisper (MIT License / SYSTRAN), FFmpeg (LGPL 2.1 / GPL 3.0), SIL OFL Fonts (Nunito, Archivo Black, Caveat, Noto Sans), and Incompetech Audio (Creative Commons CC-BY 4.0 by Kevin MacLeod).</p>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Live Render Progress Modal -->
+    <div class="modal-backdrop" id="progressModal" style="display: none;">
+      <div class="modal-card">
+        <h3 id="modalTitle">Generating Video Project...</h3>
+        <p id="modalMessage">Initializing project assets and storyboarding...</p>
+
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="modalProgressBar" style="width: 10%;"></div>
+        </div>
+        <div class="progress-percent" id="modalPercent">10%</div>
+
+        <div class="stages-indicator">
+          <span class="stage-tag active" id="stageStoryboard">Storyboard</span> &rarr;
+          <span class="stage-tag" id="stageTts">Speech</span> &rarr;
+          <span class="stage-tag" id="stageAlignment">Whisper</span> &rarr;
+          <span class="stage-tag" id="stageRender">Canvas</span> &rarr;
+          <span class="stage-tag" id="stageMux">FFmpeg</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

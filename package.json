@@ -1,0 +1,16 @@
+{
+  "name": "tws-motionforge-ai",
+  "version": "1.0.0",
+  "description": "TWS MotionForge AI — 100% Free Local AI Video Production Studio",
+  "main": "src/electron/main.mjs",
+  "type": "module",
+  "author": "Tech With Salman",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test-ui": "electron . --dry-run"
+  },
+  "devDependencies": {
+    "electron": "^45.3.4"
+  }
+}
