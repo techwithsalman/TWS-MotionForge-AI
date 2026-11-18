@@ -34,7 +34,7 @@ def check_resource_reads(reads,inputs,output):
     declared={resource_key(rel) for rel in inputs}
     output_prefix=resource_key(output).rstrip('/')+'/'
     undeclared=sorted(rel for rel in observed if not rel.startswith('engine/')
-                      and not rel.startswith(output_prefix) and rel not in declared)
+                      and not rel.startswith(output_prefix) and '/__pycache__/' not in ('/' + rel + '/') and not rel.endswith('.pyc') and rel not in declared)
     require(not undeclared,'Declare project-local code/art dependencies in inputs: '+str(undeclared))
     return observed
 LOCAL_FONT_MANIFEST_FILES=frozenset({

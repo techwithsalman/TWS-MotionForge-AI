@@ -15,12 +15,36 @@ import os
 import sys
 import wave
 
-def align_faster_whisper(audio_path, model_name='tiny', language=None):
+# Ensure HuggingFace Hub runs 100% offline and suppresses symlink warnings on Windows
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+
+def find_local_whisper_model(preferred='small.en'):
+    """Finds a locally downloaded Whisper model snapshot for 100% offline operation."""
+    if os.path.isdir(preferred) and os.path.isfile(os.path.join(preferred, 'model.bin')):
+        return preferred
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    local_dir = os.path.join(repo_root, 'models', 'whisper', preferred)
+    if os.path.isdir(local_dir) and os.path.isfile(os.path.join(local_dir, 'model.bin')):
+        return local_dir
+
+    candidates = [
+        'D:/DevCache/huggingface/hub/models--Systran--faster-whisper-small.en/snapshots/d1d751a5f8271d482d14ca55d9e2deeebbae577f',
+        'D:/DevCache/huggingface/hub/models--Systran--faster-whisper-medium/snapshots/08e178d48790749d25932bbc082711ddcfdfbc4f'
+    ]
+    for c in candidates:
+        if os.path.isdir(c) and os.path.isfile(os.path.join(c, 'model.bin')):
+            return c
+    return preferred
+
+def align_faster_whisper(audio_path, model_name='small.en', language=None):
     """Aligns speech using Faster-Whisper on CPU with INT8 quantization."""
     from faster_whisper import WhisperModel
     import numpy as np
 
-    model = WhisperModel(model_name, device='cpu', compute_type='int8')
+    resolved_model = find_local_whisper_model(model_name)
+    model = WhisperModel(resolved_model, device='cpu', compute_type='int8', local_files_only=True)
     segments, info = model.transcribe(audio_path, word_timestamps=True, language=language)
 
     words = []

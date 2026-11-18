@@ -86,19 +86,11 @@ export class MotionForgeOrchestrator {
     // Step 4: Group words into semantic captions
     onProgress({ stage: 'captions', percent: 75, message: 'Formatting semantic subtitles...' });
     const captionsJsonPath = path.join(projectDir, 'captions.json');
-    const capRes = spawnSync(process.execPath, [
-      AUTOPILOT_MJS,
-      'captions',
-      alignJsonPath,
-      captionsJsonPath
-    ], { cwd: ROOT, encoding: 'utf8' });
-
-    if (capRes.status !== 0) {
-      throw new Error(`Caption grouping failed: ${capRes.stderr || capRes.stdout}`);
-    }
+    const alignData = JSON.parse(fs.readFileSync(alignJsonPath, 'utf8'));
+    const captions = groupWordsForRatio(alignData, ratio);
+    fs.writeFileSync(captionsJsonPath, JSON.stringify(captions, null, 2) + '\n');
 
     // Load grouped captions into project.json
-    const captions = JSON.parse(fs.readFileSync(captionsJsonPath, 'utf8'));
     project.captions = captions;
     project.voice = {
       path: 'narration.wav',
@@ -115,10 +107,12 @@ export class MotionForgeOrchestrator {
     project.shots = storyboard.shots.map((shot, idx) => {
       const sStart = round2(idx * shotDuration);
       const sEnd = round2(idx === shotCount - 1 ? totalDuration : (idx + 1) * shotDuration);
-      const span = sEnd - sStart;
-      const actorX = ratio === '9:16' ? 140 : 650;
+      const span = round2(sEnd - sStart);
+      const isPortrait = ratio === '9:16';
+      const actorX = isPortrait ? 360 : 650;
 
-      return {
+      const shotObj = {
+        id: `shot_${idx + 1}`,
         start: sStart,
         end: sEnd,
         layers: [
@@ -126,28 +120,15 @@ export class MotionForgeOrchestrator {
             type: 'text',
             id: `text_${idx + 1}`,
             text: (shot.text || storyboard.title).toUpperCase().slice(0, 32),
-            x: ratio === '9:16' ? 80 : 95,
-            y: ratio === '9:16' ? 140 : 110,
-            size: ratio === '9:16' ? 44 : 54,
+            x: isPortrait ? 96 : 95,
+            y: isPortrait ? 220 : 110,
+            size: isPortrait ? 54 : 54,
             bold: true
-          },
-          {
-            type: 'pose',
-            id: `actor_${idx + 1}`,
-            pose: idx % 3,
-            x: actorX,
-            y: ratio === '9:16' ? 400 : 35,
-            w: ratio === '9:16' ? 440 : 445,
-            motion: {
-              role: 'actor',
-              reason: 'Stickman gestures dynamically with the spoken beat'
-            },
-            keys: generateContinuousKeys(actorX, span)
           },
           {
             type: 'line',
             id: `line_${idx + 1}`,
-            points: [[ratio === '9:16' ? 80 : 95, ratio === '9:16' ? 195 : 175], [ratio === '9:16' ? 450 : 550, ratio === '9:16' ? 195 : 175]],
+            points: [[isPortrait ? 96 : 95, isPortrait ? 280 : 175], [isPortrait ? 900 : 550, isPortrait ? 280 : 175]],
             color: '#EC4338',
             lineWidth: 5,
             motion: {
@@ -156,11 +137,48 @@ export class MotionForgeOrchestrator {
             },
             keys: [
               { t: 0.1, progress: 0 },
-              { t: Math.min(1.8, span * 0.7), progress: 1 }
+              { t: Math.min(1.8, Math.max(0.2, round2(span * 0.7))), progress: 1 }
             ]
+          },
+          {
+            type: 'pose',
+            id: `actor_${idx + 1}`,
+            pose: idx % 3,
+            x: actorX,
+            y: isPortrait ? 480 : 35,
+            w: isPortrait ? 560 : 445,
+            motion: {
+              role: 'actor',
+              reason: 'Stickman gestures dynamically with the spoken beat'
+            },
+            keys: generateContinuousKeys(actorX, span)
           }
         ]
       };
+
+      if (isPortrait) {
+        shotObj.portrait = {
+          intent: 'Native vertical portrait framing highlighting stickman presenter and headline',
+          regions: [
+            {
+              id: `reg_head_${idx + 1}`,
+              role: 'information',
+              intent: 'Headline title and accent highlight above the stickman presenter',
+              layer_ids: [`text_${idx + 1}`, `line_${idx + 1}`],
+              region: { x: 80, y: 190, w: 1000, h: 220 }
+            },
+            {
+              id: `reg_actor_${idx + 1}`,
+              role: 'actor',
+              intent: 'Presenter stickman performing gestures in central stage',
+              layer_ids: [`actor_${idx + 1}`],
+              region: { x: 100, y: 440, w: 900, h: 1100 }
+            }
+          ]
+        };
+      }
+
+      return shotObj;
     });
 
     fs.writeFileSync(projectJsonPath, JSON.stringify(project, null, 2) + '\n');
@@ -260,16 +278,57 @@ function round2(num) {
   return Math.round(num * 100) / 100;
 }
 
+function groupWordsForRatio(data, ratio = '16:9') {
+  const isPortrait = ratio === '9:16';
+  const maxWords = isPortrait ? 4 : 8;
+  const maxChars = isPortrait ? 26 : 52;
+  const maxDuration = isPortrait ? 2.5 : 3.5;
+
+  const cues = [];
+  let words = [], start = 0, end = 0;
+  function flush() {
+    if (words.length) {
+      cues.push({
+        start: round2(start),
+        end: round2(end),
+        text: words.join(' ').replace(/\s+([,.!?;:])/g, '$1')
+      });
+      words = [];
+    }
+  }
+
+  for (const w of (data.words || [])) {
+    if (typeof w.word !== 'string' || !w.word.trim()) continue;
+    const wordStr = w.word.trim();
+    if (words.length && (
+      w.start - end > 0.35 ||
+      words.length >= maxWords ||
+      w.end - start > maxDuration ||
+      [...words, wordStr].join(' ').length > maxChars
+    )) {
+      flush();
+    }
+    if (!words.length) start = w.start;
+    words.push(wordStr);
+    end = w.end;
+    if (/[.!?]$/.test(wordStr)) flush();
+  }
+  flush();
+  return cues;
+}
+
 function generateContinuousKeys(baseX, span) {
   const keys = [];
   const step = 1.5;
   let t = 0;
   let toggle = false;
-  while (t < span) {
+  while (t <= span - 0.3) {
     keys.push({ t: round2(t), x: baseX + (toggle ? 14 : 0) });
-    t += step;
+    t = round2(t + step);
     toggle = !toggle;
   }
-  keys.push({ t: round2(span), x: baseX + (toggle ? 14 : 0) });
+  if (keys.length === 0) {
+    keys.push({ t: 0, x: baseX });
+  }
   return keys;
 }

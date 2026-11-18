@@ -1,6 +1,6 @@
 """Exercise the real new-story entry, not the V90-only reproduction command."""
 from pathlib import Path
-import hashlib,importlib.util,json,shutil,subprocess,tempfile,unittest
+import hashlib,importlib.util,json,shutil,subprocess,tempfile,unittest,sys
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[1]
 s=importlib.util.spec_from_file_location('production_runtime',ROOT/'scripts/b6_production.py');runtime=importlib.util.module_from_spec(s);s.loader.exec_module(runtime)
@@ -10,7 +10,7 @@ class Production(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp=tempfile.TemporaryDirectory(prefix='b6-production-contract-');cls.base=Path(cls.tmp.name)/'project'
         subprocess.run(['node',str(ROOT/'scripts/autopilot.mjs'),'init',str(cls.base),'--style','B6','--ratio','16:9'],check=True,capture_output=True)
-        subprocess.run(['python3',str(ROOT/'scripts/b6_production_example.py'),str(cls.base)],check=True,capture_output=True)
+        subprocess.run([sys.executable,str(ROOT/'scripts/b6_production_example.py'),str(cls.base)],check=True,capture_output=True)
         cls.original=(cls.base/'project.json').read_bytes()
     @classmethod
     def tearDownClass(cls):cls.tmp.cleanup()
@@ -36,7 +36,7 @@ class Production(unittest.TestCase):
         self.assertFalse((self.base/'approval-16x9.json').exists())
     def test_explicit_frozen_example_still_renders_its_actual_diagnostic_frame(self):
         out=self.base/'outputs/process-scope-example'
-        r=subprocess.run(['python3',str(self.base/'run.py'),'frames',str(self.base),
+        r=subprocess.run([sys.executable,str(self.base/'run.py'),'frames',str(self.base),
                           '--ratio','16:9','--trusted-code','--seconds',str(1/30),
                           '--output',str(out.relative_to(self.base))],capture_output=True,text=True)
         self.assertEqual(r.returncode,0,r.stderr)
@@ -175,7 +175,7 @@ class FallbackLicenseIntegrity(unittest.TestCase):
         cls.base=Path(cls.tmp.name)/'project'
         script='import {initProduction} from '+json.dumps((ROOT/'scripts/b6-production.mjs').as_uri())+'; initProduction(process.argv[1], "16:9", {fontDir:process.argv[2], systemDirs:[]});'
         subprocess.run(['node','--input-type=module','-e',script,str(cls.base),str(Path(cls.tmp.name)/'no-fonts')],check=True,capture_output=True)
-        subprocess.run(['python3',str(ROOT/'scripts/b6_production_example.py'),str(cls.base)],check=True,capture_output=True)
+        subprocess.run([sys.executable,str(ROOT/'scripts/b6_production_example.py'),str(cls.base)],check=True,capture_output=True)
     def test_fallback_license_bytes_and_manifest_pins_preserve_frozen_core(self):
         engine=self.base/'engine';manifest=json.loads((engine/'manifest.json').read_text())
         provenance=json.loads((engine/'font-provenance.json').read_text())
