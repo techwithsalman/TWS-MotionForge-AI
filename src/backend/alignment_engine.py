@@ -25,6 +25,12 @@ def find_local_whisper_model(preferred='small.en'):
         return preferred
 
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    bundled_models = os.environ.get('TWS_MODELS_DIR')
+    if bundled_models:
+        for name in (preferred, 'small.en'):
+            d = os.path.join(bundled_models, 'whisper', name)
+            if os.path.isdir(d) and os.path.isfile(os.path.join(d, 'model.bin')):
+                return d
     local_dir = os.path.join(repo_root, 'models', 'whisper', preferred)
     if os.path.isdir(local_dir) and os.path.isfile(os.path.join(local_dir, 'model.bin')):
         return local_dir

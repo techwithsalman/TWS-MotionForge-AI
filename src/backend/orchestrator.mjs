@@ -12,7 +12,7 @@ import path from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createStoryboard } from './llm_engine.mjs';
-import { setupEnvironmentPaths, getPythonPath, getSkillsDir } from './path_resolver.mjs';
+import { setupEnvironmentPaths, getPythonPath, getSkillsDir, nodeChildEnv } from './path_resolver.mjs';
 
 setupEnvironmentPaths();
 
@@ -112,6 +112,7 @@ export class MotionForgeOrchestrator {
     onProgress({ stage: 'scaffolding', percent: 25, message: 'Initializing project files...' });
     // Run autopilot.mjs init
     const initRes = spawnSync(process.execPath, [AUTOPILOT_MJS, 'init', projectDir, '--style', style, '--ratio', ratio], {
+      env: nodeChildEnv(),
       cwd: ROOT,
       encoding: 'utf8'
     });
@@ -287,6 +288,7 @@ export class MotionForgeOrchestrator {
 
     onProgress({ stage: 'validating', percent: 15, message: 'Validating scene motion and layout...' });
     const valRes = spawnSync(process.execPath, [AUTOPILOT_MJS, 'validate', projectJson], {
+      env: nodeChildEnv(),
       cwd: ROOT,
       encoding: 'utf8'
     });
@@ -304,7 +306,7 @@ export class MotionForgeOrchestrator {
     onProgress({ stage: 'rendering', percent: 35, message: `Rendering ${preview ? 'preview' : 'full video'} with FFmpeg...` });
 
     return new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, renderArgs, { cwd: ROOT });
+      const child = spawn(process.execPath, renderArgs, { cwd: ROOT, env: nodeChildEnv() });
       this.activeProcesses.set(projectDir, child);
       let output = '';
       let error = '';

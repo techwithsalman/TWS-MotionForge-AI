@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { MotionForgeOrchestrator } from './orchestrator.mjs';
-import { setupEnvironmentPaths, getSkillsDir, getModelsDir, getPythonPath, getFFmpegPath } from './path_resolver.mjs';
+import { setupEnvironmentPaths, getSkillsDir, getModelsDir, getPythonPath, getFFmpegPath, getDataDir } from './path_resolver.mjs';
 
 setupEnvironmentPaths();
 
@@ -205,7 +205,7 @@ export class MotionForgeBridge {
    * Generates a short voice preview WAV file.
    */
   async previewVoice({ engine = 'sapi', voice = 'Microsoft David', text = 'Welcome to TWS MotionForge AI.' }) {
-    const previewDir = path.join(ROOT, 'test_outputs/preview_cache');
+    const previewDir = path.join(getDataDir(), 'preview_cache');
     fs.mkdirSync(previewDir, { recursive: true });
     const safeName = voice.replace(/[^a-zA-Z0-9]+/g, '_');
     const outPath = path.join(previewDir, `preview_${engine}_${safeName}.wav`);

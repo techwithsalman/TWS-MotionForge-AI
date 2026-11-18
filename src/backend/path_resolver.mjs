@@ -96,7 +96,37 @@ export function setupEnvironmentPaths() {
   if (fs.existsSync(winBin)) additions.push(winBin);
   if (fs.existsSync(pyBin)) additions.push(pyBin);
 
-  if (additions.length > 0) {
+  if (additions.length > 0 && !process.env.PATH.startsWith(additions.join(';'))) {
     process.env.PATH = `${additions.join(';')};${process.env.PATH}`;
   }
+
+  // Absolute locations consumed by the Python engines and the autopilot renderer.
+  process.env.TWS_MODELS_DIR = getModelsDir();
+  const ffmpeg = getFFmpegPath();
+  const ffprobe = getFFprobePath();
+  if (path.isAbsolute(ffmpeg)) process.env.FFMPEG = ffmpeg;
+  if (path.isAbsolute(ffprobe)) process.env.FFPROBE = ffprobe;
+  // Never let the bundled Python pick up packages from the user's own site-packages.
+  if (getPythonPath().includes(path.join('bin', 'python'))) process.env.PYTHONNOUSERSITE = '1';
+  process.env.HF_HUB_OFFLINE = '1';
+}
+
+/**
+ * Environment for child processes that re-use process.execPath as a Node runtime.
+ * Inside Electron, process.execPath is the app executable; ELECTRON_RUN_AS_NODE makes
+ * it behave as plain Node instead of opening a second application window.
+ */
+export function nodeChildEnv(extra = {}) {
+  const env = { ...process.env, ...extra };
+  if (process.versions.electron) env.ELECTRON_RUN_AS_NODE = '1';
+  return env;
+}
+
+/**
+ * Writable per-user data directory (never inside the install folder).
+ */
+export function getDataDir() {
+  const dir = process.env.TWS_DATA_DIR || path.join(ROOT, 'test_outputs');
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
 }

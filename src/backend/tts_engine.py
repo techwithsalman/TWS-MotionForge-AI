@@ -96,8 +96,11 @@ def main():
     parser.add_argument('--voice', type=str, default='default')
     parser.add_argument('--speed', type=float, default=1.0)
     parser.add_argument('--rate', type=int, default=165)
-    parser.add_argument('--model-path', type=str, default='models/tts/kokoro-v0_19.onnx')
-    parser.add_argument('--voices-path', type=str, default='models/tts/voices-v1.0.bin')
+    # Resolve bundled models: TWS_MODELS_DIR (set by the desktop app) or repo-root/models.
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    models_dir = os.environ.get('TWS_MODELS_DIR') or os.path.join(repo_root, 'models')
+    parser.add_argument('--model-path', type=str, default=os.path.join(models_dir, 'tts', 'kokoro-v0_19.onnx'))
+    parser.add_argument('--voices-path', type=str, default=os.path.join(models_dir, 'tts', 'voices-v1.0.bin'))
     args = parser.parse_args()
 
     engine = args.engine

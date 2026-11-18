@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { MotionForgeBridge } from '../backend/api_bridge.mjs';
 import { probeLocalLLM } from '../backend/llm_engine.mjs';
-import { setupEnvironmentPaths, getResourcesRoot } from '../backend/path_resolver.mjs';
+import { setupEnvironmentPaths, getResourcesRoot, getSkillsDir, getPythonPath, nodeChildEnv } from '../backend/path_resolver.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -127,11 +127,11 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle('api:run-diagnostics', async () => {
-    const autopilotScript = path.join(ROOT, 'skills/directing-stickman-videos/scripts/autopilot.mjs');
-    const pythonExe = process.platform === 'win32' ? 'python' : 'python3';
-    const res = spawnSync(process.execPath, [autopilotScript, 'doctor', '--style', 'B1', '--python', pythonExe], {
+    const autopilotScript = path.join(getSkillsDir(), 'scripts/autopilot.mjs');
+    const res = spawnSync(process.execPath, [autopilotScript, 'doctor', '--style', 'B1', '--python', getPythonPath()], {
       cwd: ROOT,
-      encoding: 'utf8'
+      encoding: 'utf8',
+      env: nodeChildEnv()
     });
     try {
       return JSON.parse(res.stdout);
