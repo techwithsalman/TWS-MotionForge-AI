@@ -12,10 +12,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { MotionForgeBridge } from '../backend/api_bridge.mjs';
 import { probeLocalLLM } from '../backend/llm_engine.mjs';
+import { setupEnvironmentPaths, getResourcesRoot } from '../backend/path_resolver.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '../..');
+
+// Setup bundled binaries and python paths
+setupEnvironmentPaths();
 
 // Register privileged custom scheme for streaming local video/audio without web security blocks
 protocol.registerSchemesAsPrivileged([
@@ -44,12 +48,15 @@ function toMediaUrl(filePath) {
 }
 
 function createWindow() {
+  const iconPath = path.join(getResourcesRoot(), 'build/icon.ico');
+
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 860,
     minWidth: 1080,
     minHeight: 700,
     title: 'TWS MotionForge AI — Powered by Tech With Salman',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     backgroundColor: '#0c1017',
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),

@@ -1,0 +1,28 @@
+TWS MotionForge AI — End-User License Agreement (EULA) & Open-Source Terms
+Product: TWS MotionForge AI
+Publisher: Tech With Salman
+Version: 1.0.0
+Platform: Windows 10 / Windows 11 (64-bit)
+Pricing Model: 100% FREE (No subscriptions, No paid API keys, No usage fees)
+
+1. FREE SOFTWARE GRANT
+Tech With Salman grants you a perpetual, non-exclusive, royalty-free license to use, run, and produce unlimited video content using TWS MotionForge AI for personal, educational, commercial, or creative purposes.
+
+2. 100% LOCAL EXECUTION & PRIVACY
+All speech synthesis, AI word alignment, canvas motion, audio mixing, and video rendering are performed 100% locally on your machine. Your scripts, generated voices, and final exported videos are never uploaded to any remote server or cloud account.
+
+3. USER PROJECTS PROTECTION
+Uninstalling or upgrading TWS MotionForge AI will NEVER delete your saved video projects, custom scripts, or exported MP4 videos located in your personal Documents folder.
+
+4. ATTRIBUTION & OPEN-SOURCE COMPONENTS
+TWS MotionForge AI incorporates verified, legally redistributable open-source components:
+- Electron: MIT License
+- Kokoro ONNX: Apache License 2.0
+- Faster-Whisper: MIT License (SYSTRAN)
+- FFmpeg & FFprobe: LGPL 2.1 / GPL 3.0 (Gyan D. Essentials Build)
+- Canvas Graphics: MIT License (@napi-rs/canvas)
+- SIL Open Font License: Nunito, Archivo Black, Caveat, Anton, Noto Sans
+- Audio Library: Incompetech (Creative Commons Attribution CC-BY 4.0 by Kevin MacLeod) and CC0 Public Domain Sound Effects.
+
+Powered by Tech With Salman.
+Enjoy creating viral, high-converting stickman videos!

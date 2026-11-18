@@ -16,11 +16,14 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { MotionForgeOrchestrator } from './orchestrator.mjs';
+import { setupEnvironmentPaths, getSkillsDir, getModelsDir, getPythonPath, getFFmpegPath } from './path_resolver.mjs';
+
+setupEnvironmentPaths();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '../..');
-const SKILL_ROOT = path.join(ROOT, 'skills/directing-stickman-videos');
+const SKILL_ROOT = getSkillsDir();
 const CATALOG_PATH = path.join(SKILL_ROOT, 'assets/b-audio-library/catalog.json');
 
 export class MotionForgeBridge {
@@ -44,7 +47,7 @@ export class MotionForgeBridge {
 
     // Check FFmpeg
     try {
-      const res = spawnSync('ffmpeg', ['-version'], { encoding: 'utf8' });
+      const res = spawnSync(getFFmpegPath(), ['-version'], { encoding: 'utf8' });
       checks.ffmpeg = res.status === 0;
     } catch {}
 
@@ -62,19 +65,19 @@ export class MotionForgeBridge {
 
     // Check Python & packages
     try {
-      const res = spawnSync('python', ['-c', 'import numpy, PIL, cv2, pyttsx3, faster_whisper; print("ok")'], { encoding: 'utf8' });
+      const res = spawnSync(getPythonPath(), ['-c', 'import numpy, PIL, cv2, pyttsx3, faster_whisper; print("ok")'], { encoding: 'utf8' });
       checks.python = res.status === 0;
       checks.fasterWhisper = res.status === 0;
     } catch {}
 
     // Check Kokoro model files
-    const kokoroModel = path.join(ROOT, 'models/tts/kokoro-v0_19.onnx');
-    const kokoroVoices = path.join(ROOT, 'models/tts/voices-v1.0.bin');
+    const kokoroModel = path.join(getModelsDir(), 'tts/kokoro-v0_19.onnx');
+    const kokoroVoices = path.join(getModelsDir(), 'tts/voices-v1.0.bin');
     checks.kokoroModel = fs.existsSync(kokoroModel) && fs.existsSync(kokoroVoices);
 
     // Check SAPI voices
     try {
-      const res = spawnSync('python', ['-c', 'import pyttsx3; print(len(pyttsx3.init().getProperty("voices")))'], { encoding: 'utf8' });
+      const res = spawnSync(getPythonPath(), ['-c', 'import pyttsx3; print(len(pyttsx3.init().getProperty("voices")))'], { encoding: 'utf8' });
       checks.sapiVoices = parseInt(res.stdout.trim(), 10) || 0;
     } catch {}
 
@@ -94,13 +97,13 @@ export class MotionForgeBridge {
     
     // Windows SAPI Voices (Instant offline)
     try {
-      const res = spawnSync('python', ['-c', 'import pyttsx3, json; e=pyttsx3.init(); print(json.dumps([{"id": v.id, "name": v.name, "engine": "sapi"} for v in e.getProperty("voices")]))'], { encoding: 'utf8' });
+      const res = spawnSync(getPythonPath(), ['-c', 'import pyttsx3, json; e=pyttsx3.init(); print(json.dumps([{"id": v.id, "name": v.name, "engine": "sapi"} for v in e.getProperty("voices")]))'], { encoding: 'utf8' });
       const sapiList = JSON.parse(res.stdout.trim());
       voices.push(...sapiList);
     } catch {}
 
     // Kokoro Studio Voices (High-fidelity neural)
-    const kokoroModel = path.join(ROOT, 'models/tts/kokoro-v0_19.onnx');
+    const kokoroModel = path.join(getModelsDir(), 'tts/kokoro-v0_19.onnx');
     if (fs.existsSync(kokoroModel)) {
       const neuralVoices = [
         { id: 'af_bella', name: 'Bella (US Female - Studio Expressive)', engine: 'kokoro' },
@@ -207,8 +210,8 @@ export class MotionForgeBridge {
     const safeName = voice.replace(/[^a-zA-Z0-9]+/g, '_');
     const outPath = path.join(previewDir, `preview_${engine}_${safeName}.wav`);
 
-    const ttsScript = path.join(ROOT, 'src/backend/tts_engine.py');
-    const res = spawnSync('python', [
+    const ttsScript = path.join(__dirname, 'tts_engine.py');
+    const res = spawnSync(getPythonPath(), [
       ttsScript,
       '--text', text,
       '--output', outPath,

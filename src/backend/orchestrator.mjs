@@ -12,11 +12,14 @@ import path from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createStoryboard } from './llm_engine.mjs';
+import { setupEnvironmentPaths, getPythonPath, getSkillsDir } from './path_resolver.mjs';
+
+setupEnvironmentPaths();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '../..');
-const SKILL_ROOT = path.join(ROOT, 'skills/directing-stickman-videos');
+const SKILL_ROOT = getSkillsDir();
 const AUTOPILOT_MJS = path.join(SKILL_ROOT, 'scripts/autopilot.mjs');
 
 export class MotionForgeOrchestrator {
@@ -124,7 +127,7 @@ export class MotionForgeOrchestrator {
     onProgress({ stage: 'tts', percent: 45, message: 'Synthesizing voiceover audio locally...' });
     const voiceWavPath = path.join(projectDir, 'narration.wav');
     const ttsScript = path.join(__dirname, 'tts_engine.py');
-    const ttsRes = spawnSync('python', [
+    const ttsRes = spawnSync(getPythonPath(), [
       ttsScript,
       '--text', storyboard.script,
       '--output', voiceWavPath,
@@ -141,11 +144,11 @@ export class MotionForgeOrchestrator {
     onProgress({ stage: 'alignment', percent: 65, message: 'Aligning subtitle timings with Faster-Whisper...' });
     const alignScript = path.join(__dirname, 'alignment_engine.py');
     const alignJsonPath = path.join(projectDir, 'words.json');
-    const alignRes = spawnSync('python', [
+    const alignRes = spawnSync(getPythonPath(), [
       alignScript,
       voiceWavPath,
       '--output', alignJsonPath,
-      '--model', 'tiny',
+      '--model', 'small.en',
       '--text-hint', storyboard.script
     ], { cwd: ROOT, encoding: 'utf8' });
 
@@ -171,10 +174,17 @@ export class MotionForgeOrchestrator {
 
     // Build timeline shots synchronized with speech duration
     const totalDuration = ttsMeta.duration;
-    const shotCount = storyboard.shots.length || 4;
+    const maxSpan = style === 'B4' ? 2.4 : 4.0;
+    const baseCount = storyboard.shots?.length || 4;
+    const shotCount = Math.max(baseCount, Math.ceil(totalDuration / maxSpan));
     const shotDuration = totalDuration / shotCount;
 
-    project.shots = storyboard.shots.map((shot, idx) => {
+    const shotsToBuild = [];
+    for (let i = 0; i < shotCount; i++) {
+      shotsToBuild.push(storyboard.shots?.[i] || storyboard.shots?.[i % (storyboard.shots?.length || 1)] || {});
+    }
+
+    project.shots = shotsToBuild.map((shot, idx) => {
       const sStart = round2(idx * shotDuration);
       const sEnd = round2(idx === shotCount - 1 ? totalDuration : (idx + 1) * shotDuration);
       const span = round2(sEnd - sStart);

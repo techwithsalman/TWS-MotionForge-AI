@@ -29,14 +29,19 @@ def find_local_whisper_model(preferred='small.en'):
     if os.path.isdir(local_dir) and os.path.isfile(os.path.join(local_dir, 'model.bin')):
         return local_dir
 
+    default_small = os.path.join(repo_root, 'models', 'whisper', 'small.en')
+    if os.path.isdir(default_small) and os.path.isfile(os.path.join(default_small, 'model.bin')):
+        return default_small
+
     candidates = [
+        os.path.expanduser('~/.cache/huggingface/hub/models--Systran--faster-whisper-small.en/snapshots/d1d751a5f8271d482d14ca55d9e2deeebbae577f'),
         'D:/DevCache/huggingface/hub/models--Systran--faster-whisper-small.en/snapshots/d1d751a5f8271d482d14ca55d9e2deeebbae577f',
         'D:/DevCache/huggingface/hub/models--Systran--faster-whisper-medium/snapshots/08e178d48790749d25932bbc082711ddcfdfbc4f'
     ]
     for c in candidates:
         if os.path.isdir(c) and os.path.isfile(os.path.join(c, 'model.bin')):
             return c
-    return preferred
+    return default_small if os.path.isdir(default_small) else preferred
 
 def align_faster_whisper(audio_path, model_name='small.en', language=None):
     """Aligns speech using Faster-Whisper on CPU with INT8 quantization."""
