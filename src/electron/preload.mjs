@@ -19,6 +19,9 @@ contextBridge.exposeInMainWorld('api', {
   getProjectDetails: (projectDir) => ipcRenderer.invoke('api:get-project-details', projectDir),
   createProject: (params) => ipcRenderer.invoke('api:create-project', params),
   renderProject: (params) => ipcRenderer.invoke('api:render-project', params),
+  cancelRender: (projectDir) => ipcRenderer.invoke('api:cancel-render', projectDir),
+  saveProject: (projectDir, data) => ipcRenderer.invoke('api:save-project', { projectDir, data }),
+  exportSubtitles: (projectDir, format) => ipcRenderer.invoke('api:export-subtitles', { projectDir, format }),
 
   // File explorer integration
   openPath: (targetPath) => ipcRenderer.invoke('api:open-path', targetPath),

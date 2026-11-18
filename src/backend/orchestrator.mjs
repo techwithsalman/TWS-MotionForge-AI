@@ -23,6 +23,76 @@ export class MotionForgeOrchestrator {
   constructor(options = {}) {
     this.projectsDir = options.projectsDir || path.join(ROOT, 'projects');
     fs.mkdirSync(this.projectsDir, { recursive: true });
+    this.activeProcesses = new Map();
+  }
+
+  /**
+   * Safely cancels an active render child process.
+   */
+  cancelRender(projectDir) {
+    const child = this.activeProcesses.get(projectDir);
+    if (child) {
+      child._wasCancelled = true;
+      try {
+        if (process.platform === 'win32' && child.pid) {
+          spawnSync('taskkill', ['/pid', String(child.pid), '/f', '/t'], { encoding: 'utf8' });
+        } else {
+          child.kill('SIGTERM');
+        }
+      } catch {}
+      this.activeProcesses.delete(projectDir);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Saves updated storyboard or project parameters.
+   */
+  saveProject(projectDir, projectData) {
+    const projectJson = path.join(projectDir, 'project.json');
+    if (!fs.existsSync(projectJson)) {
+      throw new Error(`Project file not found: ${projectJson}`);
+    }
+    fs.writeFileSync(projectJson, JSON.stringify(projectData, null, 2) + '\n');
+    return { success: true, projectDir };
+  }
+
+  /**
+   * Exports subtitles to a target path in SRT or VTT format.
+   */
+  exportSubtitles(projectDir, targetPath, format = 'srt') {
+    const outDir = fs.existsSync(path.join(projectDir, 'output'))
+      ? path.join(projectDir, 'output')
+      : path.join(projectDir, 'outputs');
+
+    const sourceFile = format === 'vtt'
+      ? (fs.existsSync(path.join(outDir, 'preview.vtt')) ? path.join(outDir, 'preview.vtt') : path.join(outDir, 'film.vtt'))
+      : (fs.existsSync(path.join(outDir, 'preview.srt')) ? path.join(outDir, 'preview.srt') : path.join(outDir, 'film.srt'));
+
+    if (!fs.existsSync(sourceFile)) {
+      // If VTT requested but only SRT exists, or vice versa, convert or generate
+      const srtFile = fs.existsSync(path.join(outDir, 'preview.srt'))
+        ? path.join(outDir, 'preview.srt')
+        : path.join(outDir, 'film.srt');
+
+      if (!fs.existsSync(srtFile)) {
+        throw new Error('No subtitle file found for this project.');
+      }
+
+      const srtContent = fs.readFileSync(srtFile, 'utf8');
+      if (format === 'vtt') {
+        const vttContent = 'WEBVTT\n\n' + srtContent.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+        fs.writeFileSync(targetPath, vttContent);
+        return { success: true, targetPath, format: 'vtt' };
+      } else {
+        fs.writeFileSync(targetPath, srtContent);
+        return { success: true, targetPath, format: 'srt' };
+      }
+    }
+
+    fs.copyFileSync(sourceFile, targetPath);
+    return { success: true, targetPath, format };
   }
 
   /**
@@ -225,13 +295,14 @@ export class MotionForgeOrchestrator {
 
     return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, renderArgs, { cwd: ROOT });
+      this.activeProcesses.set(projectDir, child);
       let output = '';
       let error = '';
 
       child.stdout.on('data', chunk => {
         const str = chunk.toString();
         output += str;
-        // Parse shot progress if available
+        // Parse shot and frame progress
         try {
           const lines = str.trim().split('\n');
           for (const line of lines) {
@@ -239,6 +310,21 @@ export class MotionForgeOrchestrator {
               const data = JSON.parse(line);
               const p = Math.round(35 + (data.shot / data.total) * 55);
               onProgress({ stage: 'rendering', percent: p, message: `Rendering shot ${data.shot}/${data.total}...` });
+            } else {
+              const shotMatch = line.match(/(?:Rendering shot|shot)\s*(\d+)\s*(?:of|\/)\s*(\d+)/i);
+              if (shotMatch) {
+                const s = parseInt(shotMatch[1], 10);
+                const t = parseInt(shotMatch[2], 10);
+                const p = Math.round(35 + (s / t) * 55);
+                onProgress({ stage: 'rendering', percent: p, message: `Rendering shot ${s}/${t}...` });
+              }
+              const frameMatch = line.match(/(?:frame|checked_frame)\s*[:=]?\s*(\d+)\s*(?:of|\/)\s*(\d+)/i);
+              if (frameMatch) {
+                const f = parseInt(frameMatch[1], 10);
+                const tf = parseInt(frameMatch[2], 10);
+                const p = Math.min(90, Math.round(35 + (f / tf) * 55));
+                onProgress({ stage: 'rendering', percent: p, message: `Rendering frame ${f}/${tf}...` });
+              }
             }
           }
         } catch {}
@@ -249,6 +335,10 @@ export class MotionForgeOrchestrator {
       });
 
       child.on('close', code => {
+        this.activeProcesses.delete(projectDir);
+        if (child._wasCancelled) {
+          return reject(new Error('Video generation was cancelled by the user.'));
+        }
         if (code !== 0) {
           return reject(new Error(`Render process exited with code ${code}: ${error || output}`));
         }

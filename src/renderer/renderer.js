@@ -8,6 +8,7 @@ let currentProject = null;
 let currentVoices = [];
 let currentStyles = [];
 let audioTrackPlayer = new Audio();
+let activeRenderingDir = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   setupNavigation();
@@ -387,19 +388,27 @@ function renderStoryboardView(data) {
       <p style="color: var(--text-muted); font-size: 13px;">${data.script || 'Custom Script Storyboard'}</p>
     </div>
     <div class="shots-timeline-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-      ${shots.map((s, i) => `
+      ${shots.map((s, i) => {
+        const textLayer = s.layers?.find(l => l.type === 'text');
+        const shotText = s.text || (textLayer ? textLayer.text : '') || 'VISUAL BEAT';
+        const duration = s.duration ? s.duration : (s.end && s.start ? (s.end - s.start).toFixed(2) : 2.5);
+        return `
         <div class="card" style="border-left: 3px solid var(--accent-primary);">
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <strong style="color: #60a5fa;">Shot ${i + 1} (${s.beat || 'Beat'})</strong>
-            <span class="badge">${s.duration ? s.duration + 's' : (s.end - s.start) + 's'}</span>
+            <span class="badge">${duration}s</span>
           </div>
-          <p style="font-size: 13px; color: #fff; margin-bottom: 8px;">"${s.text || 'Visual gesture'}"</p>
+          <div style="margin-bottom: 8px;">
+            <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 2px;">On-Screen Text:</label>
+            <input type="text" class="form-input shot-editor-text" value="${shotText}" style="padding: 4px 8px; font-size: 12px; width: 100%;">
+          </div>
           <div style="font-size: 11px; color: var(--text-muted);">
             <div><strong>Pose:</strong> ${s.suggested_pose || 'Dynamic Actor'}</div>
             <div><strong>SFX:</strong> ${s.sfx_hint || 'Ambient'}</div>
           </div>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
     </div>
   `;
 }
@@ -473,6 +482,7 @@ function setupCreationForm() {
     });
 
     try {
+      activeRenderingDir = null;
       const result = await window.api.createProject({
         topic: isTopic ? topic : undefined,
         script: !isTopic ? script : undefined,
@@ -482,7 +492,8 @@ function setupCreationForm() {
         voice
       });
 
-      updateModalProgress(100, 'Project Prepared! Starting video render...', 'rendering');
+      activeRenderingDir = result.projectDir;
+      updateModalProgress(85, 'Project Prepared! Starting video render...', 'rendering');
       
       // Auto-render preview video (5 seconds)
       const renderResult = await window.api.renderProject({
@@ -491,11 +502,13 @@ function setupCreationForm() {
         seconds: 5
       });
 
+      activeRenderingDir = null;
       hideModal();
       unsubscribe();
       await loadProjectsHistory();
       await loadProjectIntoPlayer(result.projectDir);
     } catch (err) {
+      activeRenderingDir = null;
       hideModal();
       unsubscribe();
       alert(`Generation failed: ${err.message}`);
@@ -515,19 +528,88 @@ function setupCreationForm() {
     });
 
     try {
+      activeRenderingDir = currentProject.projectDir;
       const renderRes = await window.api.renderProject({
         projectDir: currentProject.projectDir,
         preview: true,
         seconds: 5
       });
+      activeRenderingDir = null;
       hideModal();
       unsubscribe();
       await loadProjectsHistory();
       await loadProjectIntoPlayer(currentProject.projectDir);
     } catch (err) {
+      activeRenderingDir = null;
       hideModal();
       unsubscribe();
       alert(`Render failed: ${err.message}`);
+    }
+  });
+
+  // Cancel Generation button in modal
+  document.getElementById('btnCancelGeneration')?.addEventListener('click', async () => {
+    if (activeRenderingDir) {
+      try {
+        await window.api.cancelRender(activeRenderingDir);
+      } catch {}
+    }
+    hideModal();
+    activeRenderingDir = null;
+    alert('Generation cancelled by user.');
+  });
+
+  // Export Subtitles (.SRT / .VTT)
+  document.getElementById('btnExportSrt')?.addEventListener('click', async () => {
+    if (!currentProject || !currentProject.projectDir) {
+      alert('Please select or render a project first.');
+      return;
+    }
+    try {
+      const res = await window.api.exportSubtitles(currentProject.projectDir, 'srt');
+      if (res && res.success) {
+        alert(`SRT Subtitles exported successfully to:\n${res.filePath}`);
+      }
+    } catch (err) {
+      alert(`Failed to export SRT subtitles: ${err.message}`);
+    }
+  });
+
+  document.getElementById('btnExportVtt')?.addEventListener('click', async () => {
+    if (!currentProject || !currentProject.projectDir) {
+      alert('Please select or render a project first.');
+      return;
+    }
+    try {
+      const res = await window.api.exportSubtitles(currentProject.projectDir, 'vtt');
+      if (res && res.success) {
+        alert(`VTT Subtitles exported successfully to:\n${res.filePath}`);
+      }
+    } catch (err) {
+      alert(`Failed to export VTT subtitles: ${err.message}`);
+    }
+  });
+
+  // Save Storyboard Changes
+  document.getElementById('btnSaveStoryboard')?.addEventListener('click', async () => {
+    if (!currentProject || !currentProject.projectDir) {
+      alert('No active project loaded to save.');
+      return;
+    }
+    try {
+      const textInputs = document.querySelectorAll('.shot-editor-text');
+      if (textInputs.length && currentProject.project && currentProject.project.shots) {
+        textInputs.forEach((input, idx) => {
+          if (currentProject.project.shots[idx]) {
+            const layer = currentProject.project.shots[idx].layers?.find(l => l.type === 'text');
+            if (layer) layer.text = input.value.trim().toUpperCase().slice(0, 32);
+          }
+        });
+      }
+      await window.api.saveProject(currentProject.projectDir, currentProject.project);
+      alert('Storyboard changes saved successfully!');
+    } catch (err) {
+      alert(`Failed to save storyboard: ${err.message}`);
     }
   });
 

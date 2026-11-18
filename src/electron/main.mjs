@@ -4,13 +4,13 @@
  * Architecture: 100% Local, Offline, Free
  */
 
-import { app, BrowserWindow, ipcMain, shell, protocol, net } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, protocol, net, dialog } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { MotionForgeOrchestrator } from '../backend/orchestrator.mjs';
+import { MotionForgeBridge } from '../backend/api_bridge.mjs';
 import { probeLocalLLM } from '../backend/llm_engine.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,7 +23,25 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 let mainWindow = null;
-const orchestrator = new MotionForgeOrchestrator({ projectsDir: path.join(ROOT, 'projects') });
+let bridge = null;
+
+function getSafeProjectsDir() {
+  try {
+    const docPath = app.getPath('documents');
+    const userDir = path.join(docPath, 'TWS MotionForge AI', 'Projects');
+    fs.mkdirSync(userDir, { recursive: true });
+    return userDir;
+  } catch {
+    const fallback = path.join(ROOT, 'projects');
+    fs.mkdirSync(fallback, { recursive: true });
+    return fallback;
+  }
+}
+
+function toMediaUrl(filePath) {
+  if (!filePath) return null;
+  return `media://local/${encodeURIComponent(filePath.replace(/\\/g, '/'))}`;
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -74,7 +92,7 @@ function registerMediaProtocol() {
   });
 }
 
-// ---------------- IPC HANDLERS ---------------- //
+// ---------------- IPC HANDLERS CONNECTED TO API BRIDGE ---------------- //
 
 function registerIpcHandlers() {
   // 1. System Status & Diagnostics
@@ -83,10 +101,7 @@ function registerIpcHandlers() {
     const totalMem = (os.totalmem() / 1073741824).toFixed(1);
     const freeMem = (os.freemem() / 1073741824).toFixed(1);
     const hasOllama = await probeLocalLLM();
-
-    const kokoroModelPath = path.join(ROOT, 'models/tts/kokoro-v0_19.onnx');
-    const kokoroVoicesPath = path.join(ROOT, 'models/tts/voices-v1.0.bin');
-    const hasKokoro = fs.existsSync(kokoroModelPath) && fs.existsSync(kokoroVoicesPath);
+    const diag = await bridge.getSystemDiagnostics();
 
     return {
       os: `${os.type()} ${os.release()} (${os.arch()})`,
@@ -94,11 +109,11 @@ function registerIpcHandlers() {
       cores: cpus.length,
       ramTotal: `${totalMem} GB`,
       ramFree: `${freeMem} GB`,
-      hasKokoro,
-      hasSapi: process.platform === 'win32',
-      hasFasterWhisper: true,
+      hasKokoro: diag.checks.kokoroModel,
+      hasSapi: diag.checks.sapiVoices > 0,
+      hasFasterWhisper: diag.checks.fasterWhisper,
       hasOllama,
-      ffmpegVersion: 'Lavc 63 (Bundled & Verified)',
+      ffmpegVersion: diag.checks.ffmpeg ? 'Lavc 63 (Bundled & Verified)' : 'Not Found',
       pricing: '100% FREE',
       brand: 'Tech With Salman'
     };
@@ -118,7 +133,7 @@ function registerIpcHandlers() {
     }
   });
 
-  // 2. Available Animation Styles
+  // 2. Animation Styles
   ipcMain.handle('api:get-styles', async () => {
     return [
       {
@@ -196,138 +211,40 @@ function registerIpcHandlers() {
   });
 
   // Voice Preview synthesis
-  ipcMain.handle('api:preview-voice', async (_event, { engine = 'sapi', voice = 'Microsoft David', text = 'Welcome to TWS MotionForge AI.' }) => {
-    const previewDir = path.join(ROOT, 'test_outputs/preview_cache');
-    fs.mkdirSync(previewDir, { recursive: true });
-    const safeName = voice.replace(/[^a-zA-Z0-9]+/g, '_');
-    const outPath = path.join(previewDir, `preview_${engine}_${safeName}.wav`);
-
-    const ttsScript = path.join(ROOT, 'src/backend/tts_engine.py');
-    const res = spawnSync('python', [
-      ttsScript,
-      '--text', text,
-      '--output', outPath,
-      '--engine', engine,
-      '--voice', voice
-    ], { cwd: ROOT, encoding: 'utf8' });
-
-    if (res.status !== 0) {
-      throw new Error(`Voice preview failed: ${res.stderr || res.stdout}`);
-    }
-
+  ipcMain.handle('api:preview-voice', async (_event, params) => {
+    const res = await bridge.previewVoice(params);
     return {
-      filePath: outPath,
-      mediaUrl: `media://local/${encodeURIComponent(outPath.replace(/\\/g, '/'))}`
+      filePath: res.filePath,
+      mediaUrl: toMediaUrl(res.filePath)
     };
   });
 
   // 4. Bundled Audio Library (Music & SFX)
   ipcMain.handle('api:get-audio-library', async () => {
-    const audioDir = path.join(ROOT, 'skills/directing-stickman-videos/assets/b-audio-library/audio');
-    const evidenceDir = path.join(ROOT, 'skills/directing-stickman-videos/assets/b-audio-library/evidence');
-
-    if (!fs.existsSync(audioDir)) return [];
-
-    const audioItems = [];
-    function scanDir(dir) {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          scanDir(fullPath);
-        } else if (/\.(mp3|wav|ogg|flac)$/i.test(entry.name)) {
-          const isBgm = entry.name.startsWith('bgm-') || dir.includes('music');
-          const baseName = entry.name.replace(/\.(mp3|wav|ogg|flac)$/i, '');
-          const evidencePath = path.join(evidenceDir, baseName, 'source.html.txt');
-          let licenseInfo = isBgm 
-            ? 'Creative Commons CC-BY 4.0 (Kevin MacLeod / Incompetech)' 
-            : 'CC0 1.0 Universal / Public Domain SFX';
-
-          if (fs.existsSync(evidencePath)) {
-            try {
-              licenseInfo = fs.readFileSync(evidencePath, 'utf8').slice(0, 100);
-            } catch {
-              // Ignore
-            }
-          }
-
-          audioItems.push({
-            filename: entry.name,
-            fullPath,
-            mediaUrl: `media://local/${encodeURIComponent(fullPath.replace(/\\/g, '/'))}`,
-            title: baseName.replace(/^(bgm-|sfx-)/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-            type: isBgm ? 'Music' : 'Sound Effect',
-            license: licenseInfo
-          });
-        }
-      }
-    }
-
-    scanDir(audioDir);
-    return audioItems;
+    const items = bridge.getAudioLibrary();
+    return items.map(item => ({
+      ...item,
+      mediaUrl: toMediaUrl(item.fullPath)
+    }));
   });
 
   // 5. Projects Listing
   ipcMain.handle('api:get-projects', async () => {
-    const dirs = [path.join(ROOT, 'projects'), path.join(ROOT, 'test_projects')];
-    const results = [];
-
-    for (const parent of dirs) {
-      if (!fs.existsSync(parent)) continue;
-      const subs = fs.readdirSync(parent);
-      for (const sub of subs) {
-        const pdir = path.join(parent, sub);
-        const pjson = path.join(pdir, 'project.json');
-        if (fs.existsSync(pjson)) {
-          try {
-            const data = JSON.parse(fs.readFileSync(pjson, 'utf8'));
-            const previewMp4 = path.join(pdir, 'output/preview.mp4');
-            const contactSheet = path.join(pdir, 'output/preview-contact-sheet.png');
-            const hasVideo = fs.existsSync(previewMp4);
-
-            results.push({
-              name: sub,
-              path: pdir,
-              style: data.style || 'B1',
-              ratio: data.width && data.height ? (data.width > data.height ? '16:9' : '9:16') : '16:9',
-              duration: data.duration || 5,
-              hasVideo,
-              videoPath: hasVideo ? previewMp4 : null,
-              mediaUrl: hasVideo ? `media://local/${encodeURIComponent(previewMp4.replace(/\\/g, '/'))}` : null,
-              contactSheet: fs.existsSync(contactSheet) ? `media://local/${encodeURIComponent(contactSheet.replace(/\\/g, '/'))}` : null,
-              updatedAt: fs.statSync(pjson).mtime
-            });
-          } catch {
-            // Ignore invalid project dirs
-          }
-        }
-      }
-    }
-    return results.sort((a, b) => b.updatedAt - a.updatedAt);
+    const projects = await bridge.getProjects();
+    return projects.map(p => ({
+      ...p,
+      mediaUrl: toMediaUrl(p.videoPath),
+      contactSheet: toMediaUrl(p.contactSheetPath)
+    }));
   });
 
   // Project Details
   ipcMain.handle('api:get-project-details', async (_event, projectDir) => {
-    const pjsonPath = path.join(projectDir, 'project.json');
-    if (!fs.existsSync(pjsonPath)) throw new Error('Project not found');
-
-    const project = JSON.parse(fs.readFileSync(pjsonPath, 'utf8'));
-    const sbPath = path.join(projectDir, 'storyboard.json');
-    const storyboard = fs.existsSync(sbPath) ? JSON.parse(fs.readFileSync(sbPath, 'utf8')) : null;
-
-    const previewMp4 = path.join(projectDir, 'output/preview.mp4');
-    const srtPath = path.join(projectDir, 'output/preview.srt');
-    const vttPath = path.join(projectDir, 'output/preview.vtt');
-    const contactSheet = path.join(projectDir, 'output/preview-contact-sheet.png');
-
+    const details = await bridge.getProjectDetails(projectDir);
     return {
-      project,
-      storyboard,
-      videoPath: fs.existsSync(previewMp4) ? previewMp4 : null,
-      mediaUrl: fs.existsSync(previewMp4) ? `media://local/${encodeURIComponent(previewMp4.replace(/\\/g, '/'))}` : null,
-      srtText: fs.existsSync(srtPath) ? fs.readFileSync(srtPath, 'utf8') : null,
-      vttText: fs.existsSync(vttPath) ? fs.readFileSync(vttPath, 'utf8') : null,
-      contactSheetUrl: fs.existsSync(contactSheet) ? `media://local/${encodeURIComponent(contactSheet.replace(/\\/g, '/'))}` : null
+      ...details,
+      mediaUrl: toMediaUrl(details.videoPath),
+      contactSheetUrl: toMediaUrl(details.contactSheetPath)
     };
   });
 
@@ -339,7 +256,7 @@ function registerIpcHandlers() {
       }
     };
 
-    return await orchestrator.createProject({
+    return await bridge.createProject({
       topic: params.topic,
       script: params.script,
       style: params.style || 'B1',
@@ -358,7 +275,7 @@ function registerIpcHandlers() {
       }
     };
 
-    const res = await orchestrator.render({
+    const res = await bridge.renderVideo({
       projectDir,
       preview,
       seconds,
@@ -366,12 +283,42 @@ function registerIpcHandlers() {
     });
 
     if (res.videoPath) {
-      res.mediaUrl = `media://local/${encodeURIComponent(res.videoPath.replace(/\\/g, '/'))}`;
+      res.mediaUrl = toMediaUrl(res.videoPath);
     }
     return res;
   });
 
-  // 8. Open Path in Windows Explorer
+  // 8. Cancel Active Render
+  ipcMain.handle('api:cancel-render', async (_event, projectDir) => {
+    const cancelled = bridge.cancelRender(projectDir);
+    return { success: cancelled };
+  });
+
+  // 9. Save Project
+  ipcMain.handle('api:save-project', async (_event, { projectDir, data }) => {
+    return bridge.saveProject(projectDir, data);
+  });
+
+  // 10. Export Subtitles Dialog & File Write
+  ipcMain.handle('api:export-subtitles', async (_event, { projectDir, format = 'srt' }) => {
+    const defaultName = `${path.basename(projectDir)}_subtitles.${format}`;
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: `Export ${format.toUpperCase()} Subtitles`,
+      defaultPath: path.join(app.getPath('documents'), defaultName),
+      filters: [
+        { name: format.toUpperCase() + ' Subtitles', extensions: [format] }
+      ]
+    });
+
+    if (canceled || !filePath) {
+      return { canceled: true };
+    }
+
+    const res = bridge.exportSubtitles(projectDir, filePath, format);
+    return { success: true, filePath: res.targetPath };
+  });
+
+  // 11. Open Path in Windows Explorer
   ipcMain.handle('api:open-path', async (_event, targetPath) => {
     if (fs.existsSync(targetPath)) {
       if (fs.statSync(targetPath).isDirectory()) {
@@ -388,6 +335,9 @@ function registerIpcHandlers() {
 // ---------------- APP LIFECYCLE ---------------- //
 
 app.whenReady().then(() => {
+  const userProjectsDir = getSafeProjectsDir();
+  bridge = new MotionForgeBridge({ projectsDir: userProjectsDir });
+
   registerMediaProtocol();
   registerIpcHandlers();
   createWindow();

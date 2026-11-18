@@ -276,6 +276,7 @@
               <p class="view-desc">Inspect, review, and customize shot beats, narration lines, poses, and timing.</p>
             </div>
             <div class="header-tools">
+              <button class="btn btn-secondary" id="btnSaveStoryboard">Save Storyboard</button>
               <button class="btn btn-primary" id="btnRenderCurrentStoryboard">Render Active Project</button>
             </div>
           </div>
@@ -295,6 +296,8 @@
               <p class="view-desc">Inspect rendered MP4 video, check audio synchronization, and view aligned subtitles.</p>
             </div>
             <div class="header-tools">
+              <button class="btn btn-secondary" id="btnExportSrt">Export .SRT</button>
+              <button class="btn btn-secondary" id="btnExportVtt">Export .VTT</button>
               <button class="btn btn-secondary" id="btnOpenVideoFolder">Open Output Folder</button>
             </div>
           </div>
@@ -494,6 +497,8 @@
           <span class="stage-tag" id="stageRender">Canvas</span> &rarr;
           <span class="stage-tag" id="stageMux">FFmpeg</span>
         </div>
+
+        <button class="btn btn-danger btn-sm" id="btnCancelGeneration" style="margin-top: 14px; background: #dc2626; border-color: #ef4444; color: #fff;">Cancel Generation</button>
       </div>
     </div>
 
