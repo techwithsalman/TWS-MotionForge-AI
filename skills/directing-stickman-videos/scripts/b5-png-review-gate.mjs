@@ -9,7 +9,11 @@ import {validateVisualPlan} from './b5-visual-review.mjs';
 import {assertB5RevisionInvariants, buildB5RevisionRequirements, validateB5RevisionObservationCoverage} from './b5-png-revision.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const sharp = createRequire(import.meta.url)('sharp');
+let _sharp = null;
+function getSharp() {
+  if (!_sharp) _sharp = createRequire(import.meta.url)('sharp');
+  return _sharp;
+}
 const hash = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -111,7 +115,7 @@ function masking(current, file) {
 }
 async function neutralPng(current, descriptor, derivation) {
   const [left, top, width, height] = current.plan.stage_region;
-  const pipeline = sharp(path.join(current.binding.frames_dir, descriptor.source_name)).extract({left, top, width, height});
+  const pipeline = getSharp()(path.join(current.binding.frames_dir, descriptor.source_name)).extract({left, top, width, height});
   const masks = derivation?.masks || [];
   if (masks.length) pipeline.composite([{input: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '">' + masks.map(mask => {
     const [x, y, w, h] = mask.region;

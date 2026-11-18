@@ -100,22 +100,23 @@ export function generateRuleBasedStoryboard(input, { style = 'B1', ratio = '16:9
     const firstLine = script.split(/[\n.!?]/)[0].trim();
     title = firstLine.length < 50 ? firstLine : 'Animated Story';
   } else {
-    // Topic input: generate an engaging explainer script
+    // Topic input: generate an engaging 6-scene explainer script
     const topic = input.trim();
     title = topic.length < 40 ? topic : topic.slice(0, 40) + '...';
-    script = `Did you know that ${topic} is changing everything we know? Most people struggle with this every single day without realizing why. But here is the secret that solves it all: when you focus on the core fundamentals, the entire puzzle falls into place. Subscribe for more powerful insights from Tech With Salman!`;
+    script = `Have you ever wondered why ${topic} determines everything you achieve? Most people rely on fleeting bursts of energy, but motivation quickly fades away. Consistency, on the other hand, builds unshakeable daily habits that compound over time. When you show up every single day, small actions create massive long-term results. Do not wait to feel motivated—commit to the process and watch your life transform. Subscribe to Tech With Salman for more powerful life-changing insights!`;
   }
 
-  // Deconstruct script into timed shot beats
+  // Deconstruct script into timed shot beats (classic 6-scene storytelling arc)
   const sentences = script.match(/[^.!?]+[.!?]+/g) || [script];
   const shots = [];
 
   const actions = [
     { type: 'hook', pose: 'questioning', desc: 'Stick figure wonders with curious gesture', sfx: 'ui-feedback' },
     { type: 'conflict', pose: 'falling_or_tired', desc: 'Character struggles against obstacles', sfx: 'comedy-boing' },
-    { type: 'breakthrough', pose: 'lightbulb_eureka', desc: 'Glowing revelation and energetic gesture', sfx: 'whoosh' },
-    { type: 'takeaway', pose: 'confident_presenter', desc: 'Direct presentation and key takeaway', sfx: 'prop-handoff' },
-    { type: 'cta', pose: 'waving_hero', desc: 'Stick figure waves and invites interaction', sfx: 'ui-transition' }
+    { type: 'revelation', pose: 'lightbulb_eureka', desc: 'Glowing revelation and energetic gesture', sfx: 'whoosh' },
+    { type: 'momentum', pose: 'confident_presenter', desc: 'Character builds steady momentum', sfx: 'prop-handoff' },
+    { type: 'takeaway', pose: 'pointing_forward', desc: 'Direct presentation and key takeaway', sfx: 'ui-transition' },
+    { type: 'cta', pose: 'waving_hero', desc: 'Stick figure waves and invites interaction', sfx: 'ui-feedback' }
   ];
 
   sentences.forEach((sentence, idx) => {
